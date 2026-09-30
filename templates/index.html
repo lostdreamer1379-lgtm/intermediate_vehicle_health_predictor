@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vehicle Health Monitoring System</title>
+<style>
+/* ── Reset & Base ───────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:        #0f1117;
+  --surface:   #1a1d27;
+  --surface2:  #22263a;
+  --border:    #2a2d3a;
+  --text:      #e8e8e8;
+  --muted:     #7a7d8a;
+  --accent:    #4fc3f7;
+  --green:     #66bb6a;
+  --yellow:    #ffa726;
+  --orange:    #ff7043;
+  --red:       #ef5350;
+  --radius:    10px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;
+     font-size:14px;line-height:1.6}
+h1{font-size:1.5rem;font-weight:700}
+h2{font-size:1.1rem;font-weight:600;margin-bottom:14px}
+h3{font-size:.95rem;font-weight:600;color:var(--muted)}
+
+/* ── Layout ─────────────────────────────────────────────── */
+header{background:var(--surface);border-bottom:1px solid var(--border);
+       padding:18px 32px;display:flex;align-items:center;gap:14px}
+header svg{flex-shrink:0}
+.subtitle{font-size:.82rem;color:var(--muted);margin-top:2px}
+.container{max-width:1200px;margin:0 auto;padding:28px 24px}
+
+/* ── Tabs ────────────────────────────────────────────────── */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:28px}
+.tab{padding:9px 22px;border-radius:var(--radius) var(--radius) 0 0;cursor:pointer;
+     color:var(--muted);font-weight:500;border:1px solid transparent;
+     border-bottom:none;transition:.15s}
+.tab.active{background:var(--surface);color:var(--accent);border-color:var(--border)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ── Cards ───────────────────────────────────────────────── */
+.card{background:var(--surface);border:1px solid var(--border);
+      border-radius:var(--radius);padding:22px;margin-bottom:22px}
+
+/* ── Grid ────────────────────────────────────────────────── */
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+@media(max-width:700px){.grid-3,.grid-2{grid-template-columns:1fr}}
+
+/* ── Form ────────────────────────────────────────────────── */
+.form-group{display:flex;flex-direction:column;gap:5px}
+label{font-size:.82rem;color:var(--muted);font-weight:500}
+input[type=number],input[type=file]{
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--text);border-radius:6px;padding:8px 12px;
+  font-size:.9rem;width:100%;outline:none;transition:.15s}
+input[type=number]:focus,input[type=file]:focus{border-color:var(--accent)}
+.hint{font-size:.76rem;color:var(--muted);margin-top:1px}
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;
+     border-radius:6px;font-size:.88rem;font-weight:600;cursor:pointer;
+     border:none;transition:.15s;text-decoration:none}
+.btn-primary{background:var(--accent);color:#000}
+.btn-primary:hover{opacity:.88}
+.btn-outline{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.btn-outline:hover{background:rgba(79,195,247,.08)}
+.btn-green{background:var(--green);color:#000}
+.btn-green:hover{opacity:.88}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── Risk badges ─────────────────────────────────────────── */
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;
+       font-size:.78rem;font-weight:600}
+.badge-Critical{background:rgba(239,83,80,.18);color:var(--red);border:1px solid var(--red)}
+.badge-High    {background:rgba(255,112,67,.18);color:var(--orange);border:1px solid var(--orange)}
+.badge-Medium  {background:rgba(255,167,38,.18);color:var(--yellow);border:1px solid var(--yellow)}
+.badge-Low     {background:rgba(102,187,106,.18);color:var(--green);border:1px solid var(--green)}
+.badge-Healthy {background:rgba(102,187,106,.18);color:var(--green);border:1px solid var(--green)}
+.badge-Monitor {background:rgba(255,167,38,.18);color:var(--yellow);border:1px solid var(--yellow)}
+.badge-AtRisk  {background:rgba(255,112,67,.18);color:var(--orange);border:1px solid var(--orange)}
+
+/* ── Result panel ────────────────────────────────────────── */
+#single-result{display:none}
+.result-hero{text-align:center;padding:28px 0 20px}
+.prob-circle{display:inline-flex;flex-direction:column;align-items:center;
+             justify-content:center;width:130px;height:130px;border-radius:50%;
+             border:4px solid var(--accent);margin-bottom:14px}
+.prob-num{font-size:2rem;font-weight:800;line-height:1}
+.prob-lbl{font-size:.75rem;color:var(--muted);margin-top:3px}
+
+.metric-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.metric-box{background:var(--surface2);border-radius:8px;padding:14px 12px;text-align:center}
+.metric-val{font-size:1.1rem;font-weight:700}
+.metric-lbl{font-size:.75rem;color:var(--muted);margin-top:3px}
+
+/* ── Gauge bar ───────────────────────────────────────────── */
+.gauge-wrap{margin:10px 0 18px}
+.gauge-track{height:10px;background:var(--surface2);border-radius:6px;overflow:hidden;
+             position:relative}
+.gauge-fill{height:100%;border-radius:6px;transition:width .5s ease}
+.gauge-labels{display:flex;justify-content:space-between;
+              font-size:.72rem;color:var(--muted);margin-top:4px}
+
+/* ── Sensor bars ─────────────────────────────────────────── */
+.sensor-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.sensor-name{width:200px;font-size:.82rem;color:var(--muted);flex-shrink:0}
+.sensor-track{flex:1;height:7px;background:var(--surface2);border-radius:4px}
+.sensor-fill{height:100%;border-radius:4px}
+.sensor-val{width:70px;text-align:right;font-size:.82rem;font-weight:600}
+.sensor-status{width:60px;text-align:center}
+
+/* ── Actions list ────────────────────────────────────────── */
+.action-item{display:flex;gap:10px;padding:9px 12px;background:var(--surface2);
+             border-radius:6px;margin-bottom:7px;font-size:.85rem}
+.action-icon{flex-shrink:0;color:var(--yellow);font-size:1rem}
+.action-ok  {color:var(--green)}
+
+/* ── Batch results ───────────────────────────────────────── */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.stat-box{background:var(--surface2);border-radius:8px;padding:16px;text-align:center}
+.stat-num{font-size:1.6rem;font-weight:800}
+.stat-lbl{font-size:.78rem;color:var(--muted);margin-top:4px}
+
+/* ── Table ───────────────────────────────────────────────── */
+.table-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse}
+th{background:var(--surface2);padding:10px 14px;text-align:left;
+   font-size:.8rem;color:var(--muted);font-weight:600;
+   border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:9px 14px;border-bottom:1px solid rgba(255,255,255,.04);
+   font-size:.82rem;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.03)}
+
+/* ── Upload zone ─────────────────────────────────────────── */
+.upload-zone{border:2px dashed var(--border);border-radius:var(--radius);
+             padding:32px;text-align:center;cursor:pointer;transition:.15s}
+.upload-zone:hover{border-color:var(--accent)}
+.upload-zone.dragging{border-color:var(--accent);background:rgba(79,195,247,.05)}
+
+/* ── Toast ───────────────────────────────────────────────── */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--surface);
+       border:1px solid var(--border);color:var(--text);padding:12px 20px;
+       border-radius:8px;font-size:.85rem;opacity:0;transition:.25s;
+       pointer-events:none;z-index:999;max-width:320px}
+#toast.show{opacity:1}
+
+/* ── Spinner ─────────────────────────────────────────────── */
+.spinner{display:none;width:20px;height:20px;border:2px solid var(--border);
+         border-top-color:var(--accent);border-radius:50%;
+         animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- ─── Header ──────────────────────────────────────────────────────────── -->
+<header>
+  <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+    <rect width="36" height="36" rx="8" fill="#4fc3f7" opacity=".15"/>
+    <circle cx="18" cy="18" r="10" stroke="#4fc3f7" stroke-width="2" fill="none"/>
+    <path d="M18 10 L20 16 L18 15 L16 16 Z" fill="#4fc3f7"/>
+    <circle cx="18" cy="18" r="2.5" fill="#4fc3f7"/>
+  </svg>
+  <div>
+    <h1>Vehicle Health Monitoring System</h1>
+    <div class="subtitle">XGBoost · SHAP · CVHS · Research-Grade Pipeline · Local Testing Interface</div>
+  </div>
+</header>
+
+<!-- ─── Main ─────────────────────────────────────────────────────────────── -->
+<div class="container">
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('single')">🔍 Single Vehicle</div>
+    <div class="tab" onclick="switchTab('batch')">📋 Batch CSV</div>
+    <div class="tab" onclick="switchTab('info')">⚙ Model Info</div>
+  </div>
+
+  <!-- ═══ TAB 1: Single Vehicle ═══ -->
+  <div id="tab-single" class="tab-panel active">
+
+    <div class="card">
+      <h2>Sensor Readings</h2>
+      <p style="color:var(--muted);font-size:.82rem;margin-bottom:18px">
+        Enter current readings for one vehicle. Safe range shown under each field.
+      </p>
+      <div class="grid-3" id="sensor-form">
+        <!-- Populated by JS -->
+      </div>
+      <div style="margin-top:20px;display:flex;gap:12px;align-items:center">
+        <button class="btn btn-primary" onclick="predict()">
+          <span>Predict Failure Risk</span>
+          <div class="spinner" id="spin-single"></div>
+        </button>
+        <button class="btn btn-outline" onclick="loadSample('ok')">Load Healthy Sample</button>
+        <button class="btn btn-outline" onclick="loadSample('fail')">Load Failure Sample</button>
+        <button class="btn btn-outline" onclick="resetForm()">Reset</button>
+      </div>
+    </div>
+
+    <!-- Result panel -->
+    <div id="single-result">
+
+      <!-- Hero -->
+      <div class="card">
+        <div class="result-hero">
+          <div class="prob-circle" id="hero-circle">
+            <div class="prob-num" id="hero-prob">—</div>
+            <div class="prob-lbl">Failure Prob.</div>
+          </div>
+          <div id="hero-badge"></div>
+          <div style="margin-top:10px;color:var(--muted);font-size:.85rem" id="hero-verdict"></div>
+        </div>
+
+        <div class="gauge-wrap">
+          <div class="gauge-track">
+            <div class="gauge-fill" id="gauge-bar" style="width:0%"></div>
+          </div>
+          <div class="gauge-labels">
+            <span>0% — Safe</span>
+            <span>30% — Medium</span>
+            <span>50% — High</span>
+            <span>70% — Critical</span>
+            <span>100%</span>
+          </div>
+        </div>
+
+        <div class="metric-row">
+          <div class="metric-box">
+            <div class="metric-val" id="m-pred-opt">—</div>
+            <div class="metric-lbl">Prediction (thr=0.01)</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-val" id="m-pred-def">—</div>
+            <div class="metric-lbl">Prediction (thr=0.50)</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-val" id="m-cvhs">—</div>
+            <div class="metric-lbl">CVHS Score</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-val" id="m-tier">—</div>
+            <div class="metric-lbl">CVHS Tier</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sensor health bars -->
+      <div class="card">
+        <h2>Sensor Health Breakdown</h2>
+        <div id="sensor-bars"></div>
+      </div>
+
+      <!-- Actions -->
+      <div class="card">
+        <h2>Recommended Maintenance Actions</h2>
+        <div id="actions-list"></div>
+      </div>
+
+    </div><!-- /#single-result -->
+  </div><!-- /#tab-single -->
+
+  <!-- ═══ TAB 2: Batch CSV ═══ -->
+  <div id="tab-batch" class="tab-panel">
+    <div class="card">
+      <h2>Batch Prediction from CSV</h2>
+      <p style="color:var(--muted);font-size:.82rem;margin-bottom:18px">
+        Upload a CSV with the 9 raw sensor columns. Any additional columns (e.g. Record_ID, Failure)
+        are preserved in the output. The system applies feature engineering, scaling, and prediction automatically.
+      </p>
+
+      <div class="upload-zone" id="drop-zone"
+           onclick="document.getElementById('csv-input').click()"
+           ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFile(event)">
+        <div style="font-size:2rem;margin-bottom:10px">📂</div>
+        <div style="font-weight:600;margin-bottom:5px">Drop CSV here or click to browse</div>
+        <div style="color:var(--muted);font-size:.82rem">Required columns:
+          Engine_Temperature_C, RPM, Oil_Pressure_psi, Vibration_mm_s,
+          Battery_Voltage_V, Coolant_Temperature_C,
+          Fuel_Consumption_L_100km, Vehicle_Speed_kmh, Operating_Hours
+        </div>
+        <input type="file" id="csv-input" accept=".csv" style="display:none"
+               onchange="fileSelected(event)">
+      </div>
+
+      <div id="file-name" style="color:var(--accent);margin-top:10px;font-size:.85rem"></div>
+
+      <div style="margin-top:16px;display:flex;gap:12px">
+        <button class="btn btn-primary" id="batch-btn" onclick="runBatch()" disabled>
+          <span>Run Batch Prediction</span>
+          <div class="spinner" id="spin-batch"></div>
+        </button>
+        <button class="btn btn-green" id="download-btn" onclick="downloadResults()" style="display:none">
+          ⬇ Download Full Results CSV
+        </button>
+      </div>
+    </div>
+
+    <!-- Batch results -->
+    <div id="batch-result" style="display:none">
+      <div class="stat-grid">
+        <div class="stat-box">
+          <div class="stat-num" id="bs-total">—</div>
+          <div class="stat-lbl">Total Vehicles</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" style="color:var(--red)" id="bs-fail">—</div>
+          <div class="stat-lbl">Predicted Failures</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" style="color:var(--orange)" id="bs-crit">—</div>
+          <div class="stat-lbl">Critical Risk</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" style="color:var(--yellow)" id="bs-rate">—</div>
+          <div class="stat-lbl">Failure Rate %</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Preview (first 200 rows)</h2>
+        <div class="table-wrap">
+          <table id="batch-table">
+            <thead id="batch-head"></thead>
+            <tbody id="batch-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div><!-- /#tab-batch -->
+
+  <!-- ═══ TAB 3: Model Info ═══ -->
+  <div id="tab-info" class="tab-panel">
+    <div class="card">
+      <h2>Model Information</h2>
+      <div id="model-info-content" style="color:var(--muted)">Loading...</div>
+    </div>
+    <div class="card">
+      <h2>Safe Operating Ranges & CVHS Weights</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Sensor</th><th>Safe Range (Low)</th><th>Safe Range (High)</th>
+              <th>Unit</th><th>CVHS Weight</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Engine_Temperature_C</td><td>60</td><td>100</td><td>°C</td><td>0.18</td></tr>
+            <tr><td>RPM</td><td>600</td><td>3000</td><td>rpm</td><td>0.08</td></tr>
+            <tr><td>Oil_Pressure_psi</td><td>25</td><td>80</td><td>psi</td><td>0.12</td></tr>
+            <tr><td>Vibration_mm_s</td><td>0</td><td>3.0</td><td>mm/s</td><td>0.15</td></tr>
+            <tr><td>Battery_Voltage_V</td><td>11.8</td><td>14.8</td><td>V</td><td>0.10</td></tr>
+            <tr><td>Coolant_Temperature_C</td><td>50</td><td>95</td><td>°C</td><td>0.13</td></tr>
+            <tr><td>Fuel_Consumption_L_100km</td><td>6</td><td>12</td><td>L/100km</td><td>0.09</td></tr>
+            <tr><td>Vehicle_Speed_kmh</td><td>0</td><td>130</td><td>km/h</td><td>0.05</td></tr>
+            <tr><td>Operating_Hours</td><td>0</td><td>8000</td><td>h</td><td>0.10</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Research Findings Summary</h2>
+      <div class="grid-2">
+        <div style="background:var(--surface2);border-radius:8px;padding:16px">
+          <h3>Gap 1 — Evaluation Inflation</h3>
+          <p style="margin-top:8px;font-size:.85rem">
+            Random 80-20 split inflates ROC-AUC by <strong>+0.029</strong>
+            compared to honest Age-Group Leave-One-Out evaluation.
+            Leaky AUC: 0.5436 → Honest AUC: 0.5146.
+          </p>
+        </div>
+        <div style="background:var(--surface2);border-radius:8px;padding:16px">
+          <h3>Gap 2 — CVHS</h3>
+          <p style="margin-top:8px;font-size:.85rem">
+            Critical-tier vehicles (CVHS &lt; 0.40) show
+            <strong>26.6% failure rate</strong> vs 16.9% for Healthy tier.
+            CVHS decreases monotonically with Operating Hours.
+          </p>
+        </div>
+        <div style="background:var(--surface2);border-radius:8px;padding:16px">
+          <h3>Gap 3 — Top SHAP Features</h3>
+          <p style="margin-top:8px;font-size:.85rem">
+            Top global drivers: <strong>Fuel_Consumption_L_100km</strong>,
+            Oil_Pressure_psi, Fuel_Speed_Ratio. Engineered features
+            outrank raw sensor readings.
+          </p>
+        </div>
+        <div style="background:var(--surface2);border-radius:8px;padding:16px">
+          <h3>Gap 4 — Cost Optimisation</h3>
+          <p style="margin-top:8px;font-size:.85rem">
+            Optimal threshold = <strong>0.01</strong> (recall = 1.00).
+            Saves <strong>$2,301,500</strong> per 1,200 vehicles vs default threshold of 0.50.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div><!-- /#tab-info -->
+
+</div><!-- /.container -->
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+/* ── Constants ──────────────────────────────────────────── */
+const SENSORS = [
+  {key:'Engine_Temperature_C',    label:'Engine Temperature',   unit:'°C',      lo:60,    hi:100,   step:0.1, def:85},
+  {key:'RPM',                     label:'RPM',                  unit:'rpm',     lo:600,   hi:3000,  step:10,  def:1500},
+  {key:'Oil_Pressure_psi',        label:'Oil Pressure',         unit:'psi',     lo:25,    hi:80,    step:0.1, def:52},
+  {key:'Vibration_mm_s',          label:'Vibration',            unit:'mm/s',    lo:0,     hi:3.0,   step:0.01,def:1.5},
+  {key:'Battery_Voltage_V',       label:'Battery Voltage',      unit:'V',       lo:11.8,  hi:14.8,  step:0.01,def:13.3},
+  {key:'Coolant_Temperature_C',   label:'Coolant Temperature',  unit:'°C',      lo:50,    hi:95,    step:0.1, def:72},
+  {key:'Fuel_Consumption_L_100km',label:'Fuel Consumption',     unit:'L/100km', lo:6,     hi:12,    step:0.01,def:9},
+  {key:'Vehicle_Speed_kmh',       label:'Vehicle Speed',        unit:'km/h',    lo:0,     hi:130,   step:0.1, def:60},
+  {key:'Operating_Hours',         label:'Operating Hours',      unit:'h',       lo:0,     hi:10000, step:1,   def:4000},
+];
+
+const RISK_COLORS = {
+  Critical:'var(--red)', High:'var(--orange)', Medium:'var(--yellow)', Low:'var(--green)'
+};
+
+let batchFile = null;
+
+/* ── Build sensor form ──────────────────────────────────── */
+(function buildForm(){
+  const wrap = document.getElementById('sensor-form');
+  SENSORS.forEach(s => {
+    wrap.innerHTML += `
+      <div class="form-group">
+        <label>${s.label} (${s.unit})</label>
+        <input type="number" id="f_${s.key}" value="${s.def}"
+               min="${s.lo}" max="${s.hi*1.5}" step="${s.step}">
+        <span class="hint">Safe: ${s.lo} – ${s.hi} ${s.unit}</span>
+      </div>`;
+  });
+})();
+
+/* ── Tab switching ──────────────────────────────────────── */
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    const names=['single','batch','info'];
+    t.classList.toggle('active', names[i]===name);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p=>{
+    p.classList.remove('active');
+  });
+  document.getElementById(`tab-${name}`).classList.add('active');
+  if(name==='info') loadModelInfo();
+}
+
+/* ── Sample data ─────────────────────────────────────────── */
+const SAMPLES = {
+  ok:   {Engine_Temperature_C:82,RPM:1450,Oil_Pressure_psi:57,Vibration_mm_s:1.4,
+         Battery_Voltage_V:13.5,Coolant_Temperature_C:76,Fuel_Consumption_L_100km:8.8,
+         Vehicle_Speed_kmh:48,Operating_Hours:2500},
+  fail: {Engine_Temperature_C:108,RPM:2450,Oil_Pressure_psi:22,Vibration_mm_s:4.1,
+         Battery_Voltage_V:11.5,Coolant_Temperature_C:101,Fuel_Consumption_L_100km:14.2,
+         Vehicle_Speed_kmh:62,Operating_Hours:8900},
+};
+
+function loadSample(type){
+  const s = SAMPLES[type];
+  SENSORS.forEach(({key})=>{
+    document.getElementById(`f_${key}`).value = s[key];
+  });
+  toast(`${type==='ok'?'Healthy':'Failure'} sample loaded`);
+}
+
+function resetForm(){
+  SENSORS.forEach(s=>{ document.getElementById(`f_${s.key}`).value = s.def; });
+  document.getElementById('single-result').style.display='none';
+}
+
+/* ── Single predict ──────────────────────────────────────── */
+async function predict(){
+  const data = {};
+  for(const s of SENSORS){
+    const v = parseFloat(document.getElementById(`f_${s.key}`).value);
+    if(isNaN(v)){ toast(`Please enter a value for ${s.label}`,'warn'); return; }
+    data[s.key] = v;
+  }
+  toggleSpin('spin-single',true);
+  try{
+    const res  = await fetch('/api/predict',{method:'POST',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    const json = await res.json();
+    if(json.error){ toast(json.error,'err'); return; }
+    renderSingle(json, data);
+  }catch(e){ toast('Server error — is app.py running?','err'); }
+  finally{ toggleSpin('spin-single',false); }
+}
+
+function renderSingle(r, raw){
+  document.getElementById('single-result').style.display='block';
+
+  const prob = r.failure_probability;
+  const risk = r.risk_level;
+  const col  = RISK_COLORS[risk] || 'var(--accent)';
+
+  /* Hero circle */
+  const circle = document.getElementById('hero-circle');
+  circle.style.borderColor = col;
+  document.getElementById('hero-prob').textContent = prob.toFixed(1)+'%';
+  document.getElementById('hero-prob').style.color = col;
+
+  /* Badge */
+  document.getElementById('hero-badge').innerHTML =
+    `<span class="badge badge-${risk}">${risk} Risk</span>`;
+
+  /* Verdict text */
+  const verdict = r.prediction_optimal===1 ?
+    '⚠ Failure predicted — maintenance recommended' :
+    '✓ No failure predicted at optimal threshold';
+  document.getElementById('hero-verdict').textContent = verdict;
+
+  /* Gauge */
+  document.getElementById('gauge-bar').style.width = Math.min(prob,100)+'%';
+  document.getElementById('gauge-bar').style.background = col;
+
+  /* Metric boxes */
+  document.getElementById('m-pred-opt').textContent =
+    r.prediction_optimal===1 ? '⚠ FAILURE' : '✓ HEALTHY';
+  document.getElementById('m-pred-opt').style.color =
+    r.prediction_optimal===1 ? 'var(--red)' : 'var(--green)';
+
+  document.getElementById('m-pred-def').textContent =
+    r.prediction_default===1 ? '⚠ FAILURE' : '✓ HEALTHY';
+  document.getElementById('m-pred-def').style.color =
+    r.prediction_default===1 ? 'var(--red)' : 'var(--green)';
+
+  document.getElementById('m-cvhs').textContent = r.cvhs.toFixed(4);
+  document.getElementById('m-tier').innerHTML =
+    `<span class="badge badge-${r.cvhs_tier.replace(' ','')}">${r.cvhs_tier}</span>`;
+
+  /* Sensor bars */
+  const barsWrap = document.getElementById('sensor-bars');
+  barsWrap.innerHTML = '';
+  SENSORS.forEach(s=>{
+    const val = raw[s.key];
+    const mid = (s.lo+s.hi)/2;
+    const half = (s.hi-s.lo)/2;
+    const health = Math.max(0, Math.min(1, 1 - Math.abs(val-mid)/half));
+    const pct = health*100;
+    const barCol = health>0.7?'var(--green)':health>0.4?'var(--yellow)':'var(--red)';
+    const status = val>s.hi?'⚠ HIGH':val<s.lo?'⚠ LOW':'✓ OK';
+    const statusCol = (val>s.hi||val<s.lo)?'var(--red)':'var(--green)';
+    barsWrap.innerHTML += `
+      <div class="sensor-row">
+        <div class="sensor-name">${s.label}</div>
+        <div class="sensor-track">
+          <div class="sensor-fill" style="width:${pct}%;background:${barCol}"></div>
+        </div>
+        <div class="sensor-val">${val} ${s.unit}</div>
+        <div class="sensor-status" style="color:${statusCol};font-size:.78rem;font-weight:600">${status}</div>
+      </div>`;
+  });
+
+  /* Actions */
+  const actWrap = document.getElementById('actions-list');
+  actWrap.innerHTML = '';
+  r.recommended_actions.forEach(a=>{
+    const isOk = a.startsWith('No specific');
+    actWrap.innerHTML += `
+      <div class="action-item">
+        <span class="${isOk?'action-ok':'action-icon'}">${isOk?'✓':'⚠'}</span>
+        <span>${a}</span>
+      </div>`;
+  });
+
+  circle.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+/* ── Batch ───────────────────────────────────────────────── */
+function fileSelected(e){
+  batchFile = e.target.files[0];
+  document.getElementById('file-name').textContent = '📄 ' + batchFile.name;
+  document.getElementById('batch-btn').disabled = false;
+}
+function dragOver(e){ e.preventDefault(); document.getElementById('drop-zone').classList.add('dragging'); }
+function dragLeave(e){ document.getElementById('drop-zone').classList.remove('dragging'); }
+function dropFile(e){
+  e.preventDefault();
+  dragLeave(e);
+  batchFile = e.dataTransfer.files[0];
+  document.getElementById('file-name').textContent = '📄 ' + batchFile.name;
+  document.getElementById('batch-btn').disabled = false;
+}
+
+async function runBatch(){
+  if(!batchFile){ toast('Please select a CSV file','warn'); return; }
+  toggleSpin('spin-batch',true);
+  const fd = new FormData();
+  fd.append('file', batchFile);
+  try{
+    const res  = await fetch('/api/batch',{method:'POST',body:fd});
+    const json = await res.json();
+    if(json.error){ toast(json.error,'err'); return; }
+    renderBatch(json);
+    document.getElementById('download-btn').style.display='inline-flex';
+  }catch(e){ toast('Server error','err'); }
+  finally{ toggleSpin('spin-batch',false); }
+}
+
+function renderBatch(r){
+  document.getElementById('batch-result').style.display='block';
+  document.getElementById('bs-total').textContent = r.total_vehicles;
+  document.getElementById('bs-fail').textContent  = r.predicted_failures;
+  document.getElementById('bs-crit').textContent  = r.critical_risk;
+  document.getElementById('bs-rate').textContent  = r.failure_rate_+'%';
+
+  if(!r.preview||!r.preview.length) return;
+  const cols = Object.keys(r.preview[0]);
+  const interestCols = ['Record_ID','Failure_Probability_%','Prediction',
+                        'CVHS','CVHS_Tier','Risk_Level',
+                        'Engine_Temperature_C','Oil_Pressure_psi',
+                        'Vibration_mm_s','Operating_Hours','Failure'];
+  const showCols = interestCols.filter(c=>cols.includes(c));
+
+  document.getElementById('batch-head').innerHTML =
+    '<tr>' + showCols.map(c=>`<th>${c}</th>`).join('') + '</tr>';
+
+  document.getElementById('batch-body').innerHTML = r.preview.map(row=>{
+    return '<tr>' + showCols.map(c=>{
+      const v = row[c];
+      if(c==='Prediction') return `<td style="color:${v==1?'var(--red)':'var(--green)'}">
+        ${v==1?'⚠ FAIL':'✓ OK'}</td>`;
+      if(c==='Risk_Level') return `<td><span class="badge badge-${v}">${v}</span></td>`;
+      if(c==='CVHS_Tier') return `<td><span class="badge badge-${(v||'').replace(' ','')}">${v}</span></td>`;
+      if(c==='Failure_Probability_%') return `<td><strong>${v}%</strong></td>`;
+      return `<td>${v!==null&&v!==undefined?v:''}</td>`;
+    }).join('') + '</tr>';
+  }).join('');
+}
+
+async function downloadResults(){
+  if(!batchFile){ toast('Run batch first','warn'); return; }
+  const fd = new FormData(); fd.append('file', batchFile);
+  const res = await fetch('/api/batch/download',{method:'POST',body:fd});
+  const blob = await res.blob();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'vehicle_predictions.csv';
+  a.click();
+}
+
+/* ── Model Info ──────────────────────────────────────────── */
+async function loadModelInfo(){
+  const div = document.getElementById('model-info-content');
+  try{
+    const res  = await fetch('/api/model_info');
+    const json = await res.json();
+    div.innerHTML = `
+      <div class="grid-2" style="margin-bottom:16px">
+        <div style="background:var(--surface2);border-radius:8px;padding:14px">
+          <div style="color:var(--muted);font-size:.8rem">Model Type</div>
+          <div style="font-weight:700;font-size:1.1rem;color:var(--accent)">${json.model_type}</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:8px;padding:14px">
+          <div style="color:var(--muted);font-size:.8rem">Estimators</div>
+          <div style="font-weight:700;font-size:1.1rem">${json.n_estimators} trees</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:8px;padding:14px">
+          <div style="color:var(--muted);font-size:.8rem">Optimal Threshold</div>
+          <div style="font-weight:700;font-size:1.1rem;color:var(--green)">${json.optimal_threshold}</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:8px;padding:14px">
+          <div style="color:var(--muted);font-size:.8rem">Feature Scaler</div>
+          <div style="font-weight:700;font-size:1.1rem">${json.scaler}</div>
+        </div>
+      </div>
+      <div style="font-size:.82rem;color:var(--muted)">
+        <strong style="color:var(--text)">All ${json.n_features} features:</strong><br>
+        <span style="color:var(--accent)">${json.features.slice(0,9).join(', ')}</span>
+        <span style="color:var(--muted)"> + ${json.n_features-9} engineered features</span>
+      </div>`;
+  }catch(e){
+    div.textContent = 'Could not load model info.';
+  }
+}
+
+/* ── Utilities ───────────────────────────────────────────── */
+function toggleSpin(id, on){
+  document.getElementById(id).style.display = on?'block':'none';
+}
+function toast(msg, type='info'){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.borderColor = type==='err'?'var(--red)':type==='warn'?'var(--yellow)':'var(--border)';
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
