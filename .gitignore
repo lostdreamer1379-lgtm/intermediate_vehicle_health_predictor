@@ -1,0 +1,64 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+pip-wheel-metadata/
+
+# Environment files and local secrets
+.env
+.env.*
+!.env.example
+*.secret
+*.key
+
+# Local datasets and generated training outputs
+data/
+outputs/
+artifacts/
+best_vehicle_health_model.pkl
+feature_scaler.pkl
+model_metadata.pkl
+model_results_summary.csv
+model_evaluation_results.png
+research_summary.pkl
+
+# Runtime and debug output
+*.log
+instance/
+flask_session/
+vehicle_predictions.csv
+
+# Jupyter and notebook checkpoints
+.ipynb_checkpoints/
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Editors and IDEs
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+*.swp
+*.swo
+
+# Build and packaging output
+build/
+dist/
+*.egg-info/
+pip-log.txt
+pip-delete-this-directory.txt

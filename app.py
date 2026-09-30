@@ -1,5 +1,5 @@
 """
-Vehicle Health Monitoring — Local Testing System
+Vehicle Health Monitoring - Local Testing System
 ------------------------------------------------
 Flask backend for:
     - XGBoost vehicle failure prediction
@@ -143,42 +143,42 @@ print("VEHICLE HEALTH MONITORING SYSTEM")
 print("=" * 70)
 
 print(
-    f"✓ Model loaded       : "
+    f"[OK] Model loaded       : "
     f"{type(MODEL).__name__}"
 )
 
 print(
-    f"✓ Number of trees    : "
+    f"[OK] Number of trees    : "
     f"{getattr(MODEL, 'n_estimators', 'N/A')}"
 )
 
 print(
-    f"✓ Scaler loaded      : "
+    f"[OK] Scaler loaded      : "
     f"{type(SCALER).__name__}"
 )
 
 print(
-    f"✓ Features loaded    : "
+    f"[OK] Features loaded    : "
     f"{len(FEATURES)}"
 )
 
 print(
-    f"✓ RPM reference max  : "
+    f"[OK] RPM reference max  : "
     f"{RPM_MAX}"
 )
 
 print(
-    f"✓ Temp reference max : "
+    f"[OK] Temp reference max : "
     f"{TEMP_MAX}"
 )
 
 print(
-    f"✓ Optimal threshold  : "
+    f"[OK] Optimal threshold  : "
     f"{OPTIMAL_THR}"
 )
 
 print(
-    f"✓ SHAP available     : "
+    f"[OK] SHAP available     : "
     f"{SHAP_AVAILABLE}"
 )
 
@@ -265,13 +265,13 @@ ACTION_MAP = {
 
         "high": (
             100,
-            "Engine overheating — check cooling system, "
+            "Engine overheating - check cooling system, "
             "thermostat, and water pump"
         ),
 
         "low": (
             65,
-            "Engine too cold — check thermostat "
+            "Engine too cold - check thermostat "
             "for stuck-open condition"
         ),
     },
@@ -280,13 +280,13 @@ ACTION_MAP = {
 
         "low": (
             25,
-            "CRITICAL: Low oil pressure — inspect "
+            "CRITICAL: Low oil pressure - inspect "
             "oil pump and oil level immediately"
         ),
 
         "high": (
             80,
-            "Excessive oil pressure — inspect "
+            "Excessive oil pressure - inspect "
             "pressure relief valve"
         ),
     },
@@ -295,7 +295,7 @@ ACTION_MAP = {
 
         "high": (
             3.0,
-            "High vibration — inspect engine mounts, "
+            "High vibration - inspect engine mounts, "
             "driveshaft, and wheel balance"
         ),
     },
@@ -304,13 +304,13 @@ ACTION_MAP = {
 
         "low": (
             11.8,
-            "Low battery voltage — test alternator "
+            "Low battery voltage - test alternator "
             "output and battery health"
         ),
 
         "high": (
             14.8,
-            "Battery overcharging — inspect voltage regulator"
+            "Battery overcharging - inspect voltage regulator"
         ),
     },
 
@@ -318,13 +318,13 @@ ACTION_MAP = {
 
         "high": (
             95,
-            "Coolant temperature elevated — check coolant "
+            "Coolant temperature elevated - check coolant "
             "level, radiator, and hose integrity"
         ),
 
         "low": (
             50,
-            "Coolant temperature too low — thermostat "
+            "Coolant temperature too low - thermostat "
             "may be stuck open"
         ),
     },
@@ -333,7 +333,7 @@ ACTION_MAP = {
 
         "high": (
             3000,
-            "High RPM — inspect throttle control "
+            "High RPM - inspect throttle control "
             "and idle system"
         ),
     },
@@ -342,7 +342,7 @@ ACTION_MAP = {
 
         "high": (
             8000,
-            "High operating hours — schedule "
+            "High operating hours - schedule "
             "comprehensive service"
         ),
     },
@@ -351,7 +351,7 @@ ACTION_MAP = {
 
         "high": (
             12,
-            "Elevated fuel consumption — inspect "
+            "Elevated fuel consumption - inspect "
             "air filter, injectors, and O2 sensors"
         ),
     },
@@ -790,7 +790,7 @@ def get_shap_explanation(
     except Exception as e:
 
         print(
-            "\n⚠ SHAP calculation failed:"
+            "\nWARNING: SHAP calculation failed:"
         )
 
         print(
@@ -814,7 +814,7 @@ def print_debug_prediction(
 
     print("\n")
     print("=" * 80)
-    print("MODEL DEBUG — SINGLE VEHICLE")
+    print("MODEL DEBUG - SINGLE VEHICLE")
     print("=" * 80)
 
 
@@ -903,10 +903,10 @@ def print_debug_prediction(
         ):
 
             arrow = (
-                "↑"
+                "^"
                 if item["shap_value"] > 0
                 else
-                "↓"
+                "v"
             )
 
             print(
@@ -1918,7 +1918,7 @@ if __name__ == "__main__":
     print("\n" + "=" * 60)
 
     print(
-        "Vehicle Health Monitoring — Local Test System"
+        "Vehicle Health Monitoring - Local Test System"
     )
 
     print(
